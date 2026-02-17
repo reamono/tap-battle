@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>10秒連打バトル</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#121a33;
+      --text:#e8ecff;
+      --muted:#a8b0d6;
+      --accent:#66e3ff;
+      --danger:#ff6b8a;
+      --ok:#6dff9b;
+      --shadow: 0 12px 30px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+      background: radial-gradient(1200px 800px at 20% 10%, #1b2a63 0%, transparent 55%),
+                  radial-gradient(900px 700px at 90% 20%, #1e5a5f 0%, transparent 55%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 16px;
+    }
+    .app{
+      width:min(560px, 100%);
+      background: rgba(18,26,51,.86);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    header{
+      padding: 18px 18px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    h1{
+      font-size: 18px;
+      margin:0 0 6px;
+      letter-spacing:.02em;
+    }
+    .sub{
+      margin:0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    main{ padding: 16px 18px 18px; }
+    .grid{
+      display:grid;
+      gap: 12px;
+      grid-template-columns: 1fr;
+    }
+    .row{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .card{
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding: 14px;
+    }
+    .stats{
+      display:grid;
+      gap: 10px;
+      grid-template-columns: 1fr 1fr;
+    }
+    .stat{
+      padding: 12px 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.06);
+    }
+    .label{ color: var(--muted); font-size: 12px; }
+    .value{ font-size: 22px; font-weight: 750; margin-top: 4px; }
+    .value small{ font-size: 14px; color: var(--muted); font-weight: 600; }
+    .progress-wrap{
+      margin-top: 10px;
+      height: 10px;
+      background: rgba(0,0,0,.25);
+      border-radius: 999px;
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.06);
+    }
+    .progress{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, var(--accent), #7cffc9);
+      transition: width .08s linear;
+    }
+
+    .tap-area{
+      position: relative;
+      height: 260px;
+      border-radius: 18px;
+      background:
+        radial-gradient(500px 300px at 40% 30%, rgba(102,227,255,.22), transparent 60%),
+        radial-gradient(500px 300px at 60% 80%, rgba(124,255,201,.18), transparent 55%),
+        rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.10);
+      overflow:hidden;
+      touch-action: manipulation;
+      user-select:none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .tap-btn{
+      width: min(320px, 82%);
+      height: 170px;
+      border-radius: 22px;
+      border: 0;
+      font-weight: 800;
+      font-size: 22px;
+      color: #06101a;
+      background: linear-gradient(180deg, #7cf2ff 0%, #66e3ff 35%, #4de0c9 100%);
+      box-shadow: 0 14px 30px rgba(0,0,0,.35);
+      transform: translateY(0);
+      transition: transform .03s ease;
+    }
+    .tap-btn:active{ transform: translateY(2px) scale(0.99); }
+    .hint{
+      position:absolute;
+      bottom: 10px;
+      left: 12px;
+      right: 12px;
+      text-align:center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .controls{
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+      justify-content: space-between;
+      align-items:center;
+    }
+    .btn{
+      flex: 1 1 140px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .btn.primary{
+      background: rgba(102,227,255,.18);
+      border-color: rgba(102,227,255,.35);
+    }
+    .btn.danger{
+      background: rgba(255,107,138,.12);
+      border-color: rgba(255,107,138,.35);
+    }
+    .name-inputs{
+      display:grid;
+      gap: 10px;
+      grid-template-columns: 1fr 1fr;
+    }
+    input{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+    }
+    input:focus{ border-color: rgba(102,227,255,.45); }
+
+    .result{
+      display:none;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,.10);
+      line-height:1.55;
+    }
+    .badge{
+      display:inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      margin-right: 6px;
+      vertical-align: middle;
+      border: 1px solid rgba(255,255,255,.12);
+    }
+    .badge.ok{ background: rgba(109,255,155,.14); border-color: rgba(109,255,155,.35); }
+    .badge.danger{ background: rgba(255,107,138,.14); border-color: rgba(255,107,138,.35); }
+    .badge.neutral{ background: rgba(102,227,255,.12); border-color: rgba(102,227,255,.35); }
+
+    .float{
+      position:absolute;
+      pointer-events:none;
+      font-weight: 900;
+      color: rgba(255,255,255,.92);
+      text-shadow: 0 10px 20px rgba(0,0,0,.35);
+      animation: rise .6s ease-out forwards;
+    }
+    @keyframes rise{
+      from{ transform: translateY(0); opacity: 1; }
+      to{ transform: translateY(-40px); opacity: 0; }
+    }
+
+    @media (min-width: 560px){
+      .grid{ grid-template-columns: 1fr; }
+      .tap-area{ height: 300px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header>
+      <h1>10秒連打（タップ）バトル</h1>
+      <p class="sub">スマホ向け：<b>10秒間</b>ひたすらタップ！記録を競うシンプル対戦（交代制）</p>
+    </header>
+
+    <main>
+      <div class="grid">
+        <section class="card">
+          <div class="name-inputs">
+            <div>
+              <div class="label">プレイヤー1</div>
+              <input id="p1" value="Player 1" maxlength="12" />
+            </div>
+            <div>
+              <div class="label">プレイヤー2</div>
+              <input id="p2" value="Player 2" maxlength="12" />
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="stats">
+            <div class="stat">
+              <div class="label">現在の番</div>
+              <div class="value" id="turnName">Player 1</div>
+            </div>
+            <div class="stat">
+              <div class="label">残り時間</div>
+              <div class="value"><span id="timeLeft">10.0</span><small> 秒</small></div>
+              <div class="progress-wrap"><div class="progress" id="progress"></div></div>
+            </div>
+            <div class="stat">
+              <div class="label">このラウンドのタップ数</div>
+              <div class="value" id="roundTaps">0</div>
+            </div>
+            <div class="stat">
+              <div class="label">スコア</div>
+              <div class="value"><span id="scoreLine">0 - 0</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tap-area" id="tapArea" aria-label="tap area">
+          <button class="tap-btn" id="tapBtn">TAP!</button>
+          <div class="hint" id="hint">「スタート」→10秒連打 → 交代 → 勝者決定</div>
+        </section>
+
+        <section class="card">
+          <div class="controls">
+            <button class="btn primary" id="startBtn">スタート</button>
+            <button class="btn" id="nextBtn" disabled>次の人へ</button>
+            <button class="btn danger" id="resetBtn">リセット</button>
+          </div>
+          <div style="height:10px"></div>
+          <div class="result" id="resultBox"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // ====== ゲーム設定 ======
+    const ROUND_SECONDS = 10; // 10秒連打
+    // =======================
+
+    const els = {
+      p1: document.getElementById("p1"),
+      p2: document.getElementById("p2"),
+      turnName: document.getElementById("turnName"),
+      timeLeft: document.getElementById("timeLeft"),
+      progress: document.getElementById("progress"),
+      roundTaps: document.getElementById("roundTaps"),
+      scoreLine: document.getElementById("scoreLine"),
+      hint: document.getElementById("hint"),
+      tapArea: document.getElementById("tapArea"),
+      tapBtn: document.getElementById("tapBtn"),
+      startBtn: document.getElementById("startBtn"),
+      nextBtn: document.getElementById("nextBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      resultBox: document.getElementById("resultBox"),
+    };
+
+    let state = {
+      turn: 1,               // 1 or 2
+      running: false,
+      startAt: 0,
+      rafId: 0,
+      tapsThisRound: 0,
+      score1: 0,
+      score2: 0,
+      finished1: false,
+      finished2: false,
+    };
+
+    function currentName(){
+      return (state.turn === 1 ? els.p1.value.trim() : els.p2.value.trim()) || (state.turn === 1 ? "Player 1" : "Player 2");
+    }
+
+    function updateUI(){
+      els.turnName.textContent = currentName();
+      els.roundTaps.textContent = String(state.tapsThisRound);
+      els.scoreLine.textContent = `${state.score1} - ${state.score2}`;
+
+      // ボタン制御
+      els.startBtn.disabled = state.running || (state.turn === 2 && !state.finished1) || (state.turn === 1 && state.finished1 && state.finished2);
+      els.nextBtn.disabled  = state.running || (state.turn === 1 && !state.finished1) || (state.turn === 2 && !state.finished2);
+    }
+
+    function setHint(text){
+      els.hint.textContent = text;
+    }
+
+    function showResult(html){
+      els.resultBox.style.display = "block";
+      els.resultBox.innerHTML = html;
+    }
+    function hideResult(){
+      els.resultBox.style.display = "none";
+      els.resultBox.innerHTML = "";
+    }
+
+    function resetRound(){
+      state.tapsThisRound = 0;
+      els.timeLeft.textContent = ROUND_SECONDS.toFixed(1);
+      els.progress.style.width = "0%";
+      updateUI();
+    }
+
+    function resetAll(){
+      cancelAnimationFrame(state.rafId);
+      state = {
+        turn: 1, running: false, startAt: 0, rafId: 0,
+        tapsThisRound: 0, score1: 0, score2: 0, finished1: false, finished2: false,
+      };
+      hideResult();
+      setHint("「スタート」→10秒連打 → 交代 → 勝者決定");
+      resetRound();
+      updateUI();
+    }
+
+    function spawnFloat(x, y, text){
+      const div = document.createElement("div");
+      div.className = "float";
+      div.textContent = text;
+      div.style.left = (x - 8) + "px";
+      div.style.top  = (y - 10) + "px";
+      div.style.fontSize = (14 + Math.random()*10) + "px";
+      els.tapArea.appendChild(div);
+      setTimeout(()=> div.remove(), 650);
+    }
+
+    function onTap(e){
+      if(!state.running) return;
+
+      state.tapsThisRound++;
+      els.roundTaps.textContent = String(state.tapsThisRound);
+
+      // 演出：+1をふわっと表示
+      const rect = els.tapArea.getBoundingClientRect();
+      const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+      const clientY = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
+      spawnFloat(clientX - rect.left, clientY - rect.top, "+1");
+    }
+
+    function tick(){
+      const now = performance.now();
+      const elapsed = (now - state.startAt) / 1000;
+      const left = Math.max(0, ROUND_SECONDS - elapsed);
+      els.timeLeft.textContent = left.toFixed(1);
+      els.progress.style.width = `${Math.min(100, (elapsed / ROUND_SECONDS) * 100)}%`;
+
+      if(left <= 0){
+        endRound();
+        return;
+      }
+      state.rafId = requestAnimationFrame(tick);
+    }
+
+    function startRound(){
+      hideResult();
+      resetRound();
+      state.running = true;
+      state.startAt = performance.now();
+      setHint("いけーーー！！！");
+      updateUI();
+      state.rafId = requestAnimationFrame(tick);
+    }
+
+    function endRound(){
+      state.running = false;
+      cancelAnimationFrame(state.rafId);
+
+      // スコア反映
+      if(state.turn === 1){
+        state.score1 = state.tapsThisRound;
+        state.finished1 = true;
+        setHint("プレイヤー1終了！「次の人へ」で交代");
+        showResult(`<span class="badge neutral">結果</span>${els.p1.value}：<b>${state.score1}</b> タップ`);
+      }else{
+        state.score2 = state.tapsThisRound;
+        state.finished2 = true;
+        setHint("プレイヤー2終了！勝者決定！");
+        showResult(buildFinalResult());
+      }
+
+      updateUI();
+    }
+
+    function buildFinalResult(){
+      const n1 = els.p1.value.trim() || "Player 1";
+      const n2 = els.p2.value.trim() || "Player 2";
+      const a = state.score1, b = state.score2;
+
+      if(a === b){
+        return `<span class="badge neutral">引き分け</span>
+                ${n1}：<b>${a}</b> / ${n2}：<b>${b}</b><br>
+                同点！もう一回！`;
+      }
+      const winner = (a > b) ? n1 : n2;
+      const diff = Math.abs(a - b);
+
+      return `<span class="badge ok">勝者</span><b>${winner}</b><br>
+              ${n1}：<b>${a}</b> / ${n2}：<b>${b}</b><br>
+              差：<b>${diff}</b> タップ`;
+    }
+
+    function nextPlayer(){
+      if(state.running) return;
+
+      // 交代ロジック
+      if(state.turn === 1 && state.finished1){
+        state.turn = 2;
+        hideResult();
+        resetRound();
+        setHint("プレイヤー2の番！「スタート」");
+      }else if(state.turn === 2 && state.finished2){
+        // 2人終わってる場合はそのまま
+        setHint("勝者決定！リセットで再戦");
+      }
+      updateUI();
+    }
+
+    // イベント
+    els.tapBtn.addEventListener("click", onTap);
+    els.tapArea.addEventListener("touchstart", (e)=>{ onTap(e); }, {passive:true});
+    els.tapArea.addEventListener("mousedown", onTap);
+
+    els.startBtn.addEventListener("click", ()=>{
+      // 名前の空を補正
+      if(!els.p1.value.trim()) els.p1.value = "Player 1";
+      if(!els.p2.value.trim()) els.p2.value = "Player 2";
+      updateUI();
+      startRound();
+    });
+
+    els.nextBtn.addEventListener("click", nextPlayer);
+    els.resetBtn.addEventListener("click", resetAll);
+
+    // 名前変更時、表示更新
+    els.p1.addEventListener("input", updateUI);
+    els.p2.addEventListener("input", updateUI);
+
+    // 初期化
+    resetAll();
+  </script>
+</body>
+</html>
